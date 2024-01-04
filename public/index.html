@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Socket.io Video Call</title>
+  </head>
+  <body>
+    <h1>Socket.io Video Call</h1>
+    <video id="localVideo" autoplay muted></video>
+    <video id="remoteVideo" autoplay></video>
+
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script src="https://cdn.rawgit.com/feross/simple-peer/v9.1.2/index.js"></script>
+    <script>
+      const socket = io();
+
+      const localVideo = document.getElementById("localVideo");
+      const remoteVideo = document.getElementById("remoteVideo");
+
+      // Initialize a new SimplePeer instance for each client
+      const peer = new SimplePeer({ initiator: false, trickle: false });
+
+      // Send the signaling data to the other client
+      peer.on("signal", (data) => {
+        socket.emit("signal", data);
+      });
+
+      // Forward the signaling data from the other client
+      socket.on("signal", (data) => {
+        peer.signal(data);
+      });
+
+      // Forward the video stream from the other client
+      peer.on("stream", (stream) => {
+        remoteVideo.srcObject = stream;
+      });
+
+      // Get the local user's video stream
+      navigator.mediaDevices
+        .getUserMedia({ video: true, audio: true })
+        .then((stream) => {
+          localVideo.srcObject = stream;
+          // Add the local video stream to the SimplePeer instance
+          peer.addStream(stream);
+        })
+        .catch((error) => {
+          console.error("Error accessing media devices:", error);
+        });
+    </script>
+  </body>
+</html>
